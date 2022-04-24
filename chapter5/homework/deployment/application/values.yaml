@@ -1,0 +1,33 @@
+replicaCount: 2
+
+image:
+  repository: registry.hub.docker.com/dalv/otus-microservice-architecture
+  version: 0.0.2-chapter-5
+  pullPolicy: Always
+
+ingressHost: arch.homework
+
+namespace: default
+
+# Маппиться на Pod -> Service -> Ingress
+port: 8000
+# Маппиться на Pod -> Service
+management:
+  port: 8081
+
+# Ограничение по ресурсам CPU, RAM
+appResources:
+  limits:
+    cpu: 1
+    memory: 728Mi
+  requests:
+    cpu: 500m
+    memory: 256Mi
+
+env:
+  JVM_OPTIONS: "-Xmx128m -Xms64m -Xss512k -XX:MaxMetaspaceSize=128m -Djdk.nio.maxCachedBufferSize=262144"
+  MALLOC_ARENA_MAX: "2"
+
+ingress:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"

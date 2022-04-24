@@ -1,0 +1,122 @@
+---
+# Source: application/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: otus-application
+  namespace: "default"
+  labels:
+    app: otus-application
+    chart: "application-1.0.0"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: web-port
+    port: 8000
+    targetPort: 8000
+  - name: management-port
+    port: 8081
+    targetPort: 8081
+  selector:
+    app: otus-application
+...
+---
+# Source: application/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otus-application
+  namespace: "default"
+  labels:
+    app: otus-application
+    chart: "application-1.0.0"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: otus-application
+  strategy:
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: otus-application
+        chart: "application-1.0.0"
+    spec:
+      containers:
+      - name: otus-application
+        image: registry.hub.docker.com/dalv/otus-microservice-architecture:0.0.2-chapter-5
+        imagePullPolicy: Always
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        env:
+        - name: JVM_OPTIONS
+          value: "-Xmx400m -Xms400m -Xss512k -XX:MaxMetaspaceSize=128m -Djdk.nio.maxCachedBufferSize=262144 -XX:+UseG1GC -XX:+UseCompressedOops -XX:+UseStringDeduplication"
+        - name: MALLOC_ARENA_MAX
+          value: "2"
+        - name: SPRING_APPLICATION_NAME
+          value: "application"
+        resources:
+          limits:
+            cpu: 1
+            memory: 728Mi
+          requests:
+            cpu: 500m
+            memory: 256Mi
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+        - containerPort: 8081
+          protocol: TCP
+          name: management
+---
+# Source: application/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otus-application
+  namespace: "default"
+  labels:
+    app: otus-application
+    chart: "application-1.0.0"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: arch.homework
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: otus-application
+            port:
+              number: 8000
+      - path: /actuator
+        pathType: Prefix
+        backend:
+          service:
+            name: otus-application
+            port:
+              number: 8081

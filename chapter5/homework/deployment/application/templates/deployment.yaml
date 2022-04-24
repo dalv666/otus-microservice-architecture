@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "application.fullname" . }}
+  namespace: {{ .Values.namespace | quote }}
+  labels:
+    app: {{ template "application.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: {{ template "application.fullname" . }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{ template "application.fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      containers:
+      - name: {{ template "application.fullname" . }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.version }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: {{ .Values.management.port }}
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: {{ .Values.management.port }}
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        env:
+        {{- range $key, $value := .Values.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+{{- if .Values.appResources }}
+        resources:
+{{ toYaml .Values.appResources | trim | indent 10 }}
+{{- end }}
+        ports:
+        - containerPort: {{ .Values.port }}
+          protocol: TCP
+        - containerPort: {{ .Values.management.port }}
+          protocol: TCP
+          name: management

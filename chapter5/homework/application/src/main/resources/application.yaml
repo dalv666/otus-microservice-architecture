@@ -1,0 +1,19 @@
+management:
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+    health:
+      show-details: ALWAYS
+  trace:
+    http:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: 'health,liveness,info,prometheus,httptrace'
+  server:
+    port: 8081
+server:
+  port: 8000

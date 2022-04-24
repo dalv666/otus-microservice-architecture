@@ -1,0 +1,8 @@
+# Айпи где принимает ингресс, если не прод, то тоже что и в kubehost
+ingressHost: arch.homework
+
+env:
+  JVM_OPTIONS: "-Xmx400m -Xms400m -Xss512k -XX:MaxMetaspaceSize=128m -Djdk.nio.maxCachedBufferSize=262144 -XX:+UseG1GC -XX:+UseCompressedOops -XX:+UseStringDeduplication"
+  MALLOC_ARENA_MAX: "2"
+
+  SPRING_APPLICATION_NAME: "application"
